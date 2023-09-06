@@ -1,5 +1,9 @@
 use rand::distributions::{Distribution, Uniform};
 
+const N_JOBS: u32 = 50;
+const N_HOURS: u8 = 200;
+const N_CHARS_PER_HOUR: usize = 3;
+
 #[derive(Clone,Copy,Debug)]
 struct Job {
 	start_time: u8,
@@ -16,7 +20,7 @@ impl Job {
 impl std::fmt::Display for Job {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let profit = self.profit.to_string();
-        write!(f, "{}|{}{}|", " ".repeat(self.start_time as usize * 2), profit, " ".repeat((self.end_time - self.start_time) as usize * 2 - profit.len()))
+        write!(f, "{}|{}{}|", " ".repeat(self.start_time as usize * N_CHARS_PER_HOUR), profit, " ".repeat((self.end_time - self.start_time) as usize * N_CHARS_PER_HOUR - profit.len()))
     }
 }
 
@@ -36,7 +40,7 @@ impl Node {
 
 fn gen_random_job(rng: &mut rand::rngs::ThreadRng, start_time_dist: Uniform<u8>, profit_dist: Uniform<u32>) -> Job {
     let start_time = start_time_dist.sample(rng);
-    let end_time_dist = Uniform::from((start_time + 1)..10);
+    let end_time_dist = Uniform::from((start_time + 1)..N_HOURS);
     let end_time = end_time_dist.sample(rng);
     let profit = profit_dist.sample(rng);
     return Job::new(start_time, end_time, profit)
@@ -77,22 +81,25 @@ fn get_options(previous_end_time: u8, jobs: &Vec<Job>) -> Vec<Node> {
 }
 
 fn main() {
-    let start_time_dist = Uniform::from(0..9);
-    let profit_dist = Uniform::from(1..100);
+    let start_time_dist = Uniform::from(0..(N_HOURS - 1));
+    let profit_dist = Uniform::from(1..200);
     let mut rng = rand::thread_rng();
-    let jobs = (0..10)
+    let jobs = (0..N_JOBS)
         .into_iter()
         .map(|_| gen_random_job(&mut rng, start_time_dist, profit_dist))
         .collect();
+    /*
+    // This is debug code
     for &job in &jobs {
         println!("{}", job);
     }
-    for i in 0..10 {
+    for i in 0..N_HOURS {
         print!("{}|", i);
     }
     println!();
+    */
+
     let branches = get_options(0, &jobs);
-    //println!("{:#?}", branches);
     let mut current_best_branch = branches.iter().max_by(|a, b| a.job.profit.cmp(&b.job.profit)).unwrap();
 
     println!("Done! Total profit: {}", current_best_branch.total_profit);
@@ -100,6 +107,9 @@ fn main() {
     while let Some(best_child_index) = current_best_branch.best_child_index {
         current_best_branch = &current_best_branch.children[best_child_index];
         println!("{}", current_best_branch.job);
+    }
+    for i in 0..N_HOURS {
+        print!("{:0>3}|", i);
     }
     println!();
 }
