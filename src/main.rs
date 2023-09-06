@@ -1,5 +1,5 @@
 use rand::Rng;
-use rand_distr::{Normal, Distribution};
+use rand::distributions::{Distribution, Uniform};
 
 #[derive(Clone,Copy)]
 struct Job {
@@ -28,14 +28,14 @@ impl Node {
     }
 }
 
-fn gen_random_job(normal: Normal<u32>, mut rng: rand::rngs::ThreadRng) -> Job {
+fn gen_random_job(rng: &mut rand::rngs::ThreadRng) -> Job {
     let start_time = rng.gen();
     let end_time = rng.gen();
-    let profit = normal
+    let profit = rng.gen();
     return Job::new(start_time, end_time, profit)
 }
 
-fn next_branch(previous_end_time: u8, jobs: &Vec<Job>) -> Vec<Node> {
+fn get_options(previous_end_time: u8, jobs: &Vec<Job>) -> Vec<Node> {
     // first, remove all jobs starting before the previous end time
     let jobs_left: Vec<Job> = jobs
         .iter()
@@ -55,12 +55,21 @@ fn next_branch(previous_end_time: u8, jobs: &Vec<Job>) -> Vec<Node> {
     jobs_left
         .iter()
         .filter(|&j| j.start_time < earliest_end_time)
-        .map(|&job| Node::new(job, next_branch(job.end_time, &jobs_left)))
+        .map(|&job| Node::new(job, get_options(job.end_time, &jobs_left)))
         .collect()
 }
 
 fn main() {
-    let normal = Normal::new(2.0, 3.0).unwrap();
+    let start_time_dist = Uniform::from(0..10);
+    let start_time_dist = Uniform::from(0..10);
+    let profit_dist = Uniform::from(0..10);
     let mut rng = rand::thread_rng();
-    let jobs = (0..100).into_iter().map(|_| Job::new(0, 0, 0));
+    let jobs = (0..100)
+        .into_iter()
+        .map(|_| gen_random_job(&mut rng))
+        .collect();
+    let branches = get_options(0, &jobs);
+    
+    // Find the best branch
+
 }
