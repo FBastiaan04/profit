@@ -3,29 +3,27 @@ use rand::distributions::{Distribution, Uniform};
 
 #[derive(Clone,Copy)]
 struct Job {
-    start_time: u8,
-    end_time: u8,
-    profit: u32,
+	start_time: u8,
+	end_time: u8,
+	profit: u32,
 }
 
 impl Job {
-    fn new(start_time: u8, end_time: u8, profit: u32) -> Self {
-        return Self {start_time, end_time, profit}
-    }
+	fn new(start_time: u8, end_time: u8, profit: u32) -> Self {
+		return Self {start_time, end_time, profit}
+	}
 }
 
 struct Node {
-    job: Job,
-    children: Vec<Node>,
+	job: Job,
+	children: Vec<Node>,
+	total_profit: u32,
 }
 
 impl Node {
-    fn new(job: Job, children: Vec<Node>) -> Self {
-        Self {job, children}
-    }
-    fn add(mut self, child: Node) {
-        self.children.push(child);
-    }
+	fn new(job: Job, children: Vec<Node>) -> Self {
+		Self {job, children}
+	}
 }
 
 fn gen_random_job(rng: &mut rand::rngs::ThreadRng) -> Job {
@@ -48,15 +46,22 @@ fn get_options(previous_end_time: u8, jobs: &Vec<Job>) -> Vec<Node> {
         return vec![];
     }
 
-    // third, find earliest end time. The next job must start before this time
-    let earliest_end_time = jobs_left.iter().min_by(|a, b| a.end_time.cmp(&b.end_time)).unwrap().end_time;
-    
+	// third, find earliest end time. The next job must start before this time
+	let earliest_end_time = jobs_left.iter().min_by(|a, b| a.end_time.cmp(&b.end_time)).unwrap().end_time;
+	
 
-    jobs_left
-        .iter()
-        .filter(|&j| j.start_time < earliest_end_time)
-        .map(|&job| Node::new(job, get_options(job.end_time, &jobs_left)))
-        .collect()
+	jobs_left
+		.iter()
+		.filter(|&j| j.start_time < earliest_end_time)
+		.map(|&job| {
+			let children = next_branch(job.end_time, &jobs_left);
+			let total_profit = match children.iter().max_by(|c| c.job.profit) {
+				Some(best_child) => best_child.profit;
+				None => 0
+			} + job.profit
+			Node::new(job, next_branch(job.end_time, &jobs_left), )
+		})
+		.collect()
 }
 
 fn main() {
