@@ -1,4 +1,3 @@
-use rand::Rng;
 use rand::distributions::{Distribution, Uniform};
 
 #[derive(Clone,Copy,Debug)]
@@ -65,22 +64,16 @@ fn get_options(previous_end_time: u8, jobs: &Vec<Job>) -> Vec<Node> {
 		.filter(|&j| j.start_time <= earliest_end_time)
 		.map(|&job| {
 			let children = get_options(job.end_time, &jobs_left);
-            let (total_profit, best_child_index) = match (children
+            let (total_profit, best_child_index) = match children
                 .iter()
                 .enumerate()
-                .max_by(|(_, a), (_, b)| a.job.profit.cmp(&b.job.profit))) {
+                .max_by(|(_, a), (_, b)| a.job.profit.cmp(&b.job.profit)) {
                     Some((best_child_index, best_child)) => (best_child.total_profit + job.profit, Some(best_child_index)),
                     None => (job.profit, None)
                 };
 			Node::new(job, children, total_profit, best_child_index)
 		})
 		.collect()
-}
-
-fn print_job_in_line(job: Job, cursor: usize) {
-    let time = (job.end_time - job.start_time) as usize;
-    let profit = job.profit.to_string();
-    print!("{}|{}{}|", " ".repeat(job.start_time as usize * 2 - cursor), profit, " ".repeat(time - profit.len()));
 }
 
 fn main() {
